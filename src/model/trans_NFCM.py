@@ -30,16 +30,14 @@ class TransNFCM(nn.Module):
         super().__init__()
         self.vidual_net = VidualNet(in_ch, out_ch)
         # TODO: more efficientry
-        self.relational_table = RelationalTable(n_relational_embeddings, embedding_dim)
+        self.relational_table = RelationalTable(n_relational_embeddings, embedding_dim*2)
         self.tag_net = TagNet(n_tag_embeddings, embedding_dim)
-
-        self.fc = nn.Linear(embedding_dim*2, embedding_dim)
 
     def calculate_VT_encoded_vec(self, v_vec, t_vec):
         v_vec = F.normalize(v_vec, p=2, dim=1)
         t_vec = F.normalize(t_vec, p=2, dim=1)
         vt_vec = torch.cat([v_vec, v_vec], dim=1)
-        return self.fc(vt_vec)
+        return vt_vec
 
     def calculate_distance(self, x, y, x_cat, y_cat, relational_tag):
         x_vidual_vec = self.vidual_net(x)
