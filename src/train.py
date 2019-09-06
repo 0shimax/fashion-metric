@@ -3,6 +3,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from tensorboardX import SummaryWriter
 from model.trans_NFCM import TransNFCM
 from optimizer.radam import RAdam
 from feature.data_loader_for_NFCM import FMNISTDataset, loader
@@ -33,7 +34,7 @@ def main(args):
     train_loader = loader(train_dataset, args.batch_size)
     test_loader = loader(test_dataset, 1, shuffle=False)
 
-    train(args, model, optimizer, train_loader)
+    # train(args, model, optimizer, train_loader)
     test(args, model, test_loader)
 
 
@@ -79,19 +80,29 @@ def train(args, model, optimizer, data_loader):
 
 def test(args, model, data_loader):
     model.eval()
+    writer = SummaryWriter()
+    weights = []
+    images = []
     with torch.no_grad():
         for i, (image, cat) in enumerate(data_loader):
+            if i==1000: break
             image = image.to(device)
             cat = cat.to(device)
 
-            embedded_vec = model.predict(image)
-        print("done test")
+            embedded_vec = model.predict(x=image, category=None)
+            weights.append(embedded_vec.squeeze(0).numpy())
+            images.append(image.squeeze(0).numpy())
+
+    weights = torch.FloatTensor(weights)
+    images = torch.FloatTensor(images)
+    writer.add_embedding(weights, label_img=images)
+    print("done")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--n-class', type=int, default=10, help='number of class')
-    parser.add_argument('--resume-model', default='./results/model_.pth', help='path to trained model')
+    parser.add_argument('--resume-model', default='./results/model.pth', help='path to trained model')
     parser.add_argument('--batch-size', type=int, default=128, help='input batch size')
     parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train for')
     parser.add_argument('--out-dir', default='./results', help='folder to output data and model checkpoints')
