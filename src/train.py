@@ -34,16 +34,12 @@ def main(args):
     train_loader = loader(train_dataset, args.batch_size)
     test_loader = loader(test_dataset, 1, shuffle=False)
 
-    # train(args, model, optimizer, train_loader)
+    train(args, model, optimizer, train_loader)
     test(args, model, test_loader)
 
 
 def train(args, model, optimizer, data_loader):
     model.train()
-
-    pre_loss = 1e6
-    min_loss = 1e6
-    no_implove_cnt = 0
     for epoch in range(args.epochs):
         for i, (image, cat, near_image, near_cat, far_image, far_cat, near_relation, far_relation) in enumerate(data_loader):
             image = image.to(device)
