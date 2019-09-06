@@ -1,0 +1,10 @@
+__pycache__/
+.DS_Store
+data/
+!src/data/
+src/*/__pycache__/
+.ipynb_checkpoints/
+.tags1
+.tags
+fashion-mnist
+results
