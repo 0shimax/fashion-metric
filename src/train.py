@@ -46,7 +46,9 @@ def main(args):
     test_loader = loader(test_dataset, 1, shuffle=False)
 
     # train(args, model, optimizer, train_loader)
-    test(args, model, test_loader, show_image_on_board=args.show_image_on_board)
+    test(args, model, test_loader,
+         show_image_on_board=args.show_image_on_board,
+         show_all_embedding=args.show_all_embedding)
 
 
 def train(args, model, optimizer, data_loader):
@@ -85,7 +87,8 @@ def train(args, model, optimizer, data_loader):
                '{}/model.pth'.format(args.out_dir))
 
 
-def test(args, model, data_loader, show_image_on_board=False):
+def test(args, model, data_loader,
+         show_image_on_board=True, show_all_embedding=False):
     model.eval()
     writer = SummaryWriter()
     weights = []
@@ -100,7 +103,10 @@ def test(args, model, data_loader, show_image_on_board=False):
             images.append(image.squeeze(0).numpy())
 
             if show_image_on_board:
-                embedded_vec = model.predict(x=image, category=None)
+                if show_all_embedding:
+                    embedded_vec = model.predict(x=image, category=cat)
+                else:
+                    embedded_vec = model.predict(x=image, category=None)
             else:
                 embedded_vec = model.predict(x=None, category=cat)
             weights.append(embedded_vec.squeeze(0).numpy())
@@ -120,7 +126,8 @@ if __name__ == '__main__':
     parser.add_argument('--resume-model', default='./results/model.pth', help='path to trained model')
     parser.add_argument('--batch-size', type=int, default=128, help='input batch size')
     parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train for')
-    parser.add_argument('--show-image-on-board', action='store_true')
+    parser.add_argument('--show-image-on-board', action='store_false')
+    parser.add_argument('--show-all-embedding', action='store_false')
     parser.add_argument('--out-dir', default='./results', help='folder to output data and model checkpoints')
     args = parser.parse_args()
     Path(args.out_dir).mkdir(parents=True, exist_ok=True),
