@@ -13,6 +13,17 @@ torch.manual_seed(555)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device:", device)
 
+idx2label = {0:"T-shirt/top",
+             1:"Trouser",
+             2:"Pullover",
+             3:"Dress",
+             4:"Coat",
+             5:"Sandal",
+             6:"Shirt",
+             7:"Sneaker",
+             8:"Bag",
+             9:"Ankle boot"}
+
 
 def main(args):
     n_relational_embeddings = args.n_class**2
@@ -34,8 +45,8 @@ def main(args):
     train_loader = loader(train_dataset, args.batch_size)
     test_loader = loader(test_dataset, 1, shuffle=False)
 
-    train(args, model, optimizer, train_loader)
-    test(args, model, test_loader)
+    # train(args, model, optimizer, train_loader)
+    test(args, model, test_loader, show_image_on_board=args.show_image_on_board)
 
 
 def train(args, model, optimizer, data_loader):
@@ -74,24 +85,32 @@ def train(args, model, optimizer, data_loader):
                '{}/model.pth'.format(args.out_dir))
 
 
-def test(args, model, data_loader):
+def test(args, model, data_loader, show_image_on_board=False):
     model.eval()
     writer = SummaryWriter()
     weights = []
     images = []
+    labels = []
     with torch.no_grad():
         for i, (image, cat) in enumerate(data_loader):
             if i==1000: break
             image = image.to(device)
             cat = cat.to(device)
-
-            embedded_vec = model.predict(x=image, category=None)
-            weights.append(embedded_vec.squeeze(0).numpy())
+            labels.append(idx2label[cat.item()])
             images.append(image.squeeze(0).numpy())
+
+            if show_image_on_board:
+                embedded_vec = model.predict(x=image, category=None)
+            else:
+                embedded_vec = model.predict(x=None, category=cat)
+            weights.append(embedded_vec.squeeze(0).numpy())
 
     weights = torch.FloatTensor(weights)
     images = torch.FloatTensor(images)
-    writer.add_embedding(weights, label_img=images)
+    if show_image_on_board:
+        writer.add_embedding(weights, label_img=images)
+    else:
+        writer.add_embedding(weights, metadata=labels)
     print("done")
 
 
@@ -101,6 +120,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume-model', default='./results/model.pth', help='path to trained model')
     parser.add_argument('--batch-size', type=int, default=128, help='input batch size')
     parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train for')
+    parser.add_argument('--show-image-on-board', action='store_true')
     parser.add_argument('--out-dir', default='./results', help='folder to output data and model checkpoints')
     args = parser.parse_args()
     Path(args.out_dir).mkdir(parents=True, exist_ok=True),
